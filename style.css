@@ -1,0 +1,14 @@
+#pc-wpm {
+  color: rgba(255, 255, 255, 0.5);
+  user-select: none;
+  pointer-events: none;
+  display: block;
+  position: absolute;
+  right: 16px;
+  bottom: .2em;
+  z-index: 1;
+}
+.message-1PNnaP #pc-wpm {
+  right: unset;
+  left: 5px;
+}

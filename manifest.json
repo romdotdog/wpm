@@ -1,0 +1,7 @@
+{
+    "name": "pc-wpm",
+    "description": "View words per minute if each word was five characters",
+    "author": "rom#5692",
+    "version": "1.0.0",
+    "license": "MIT"
+}
