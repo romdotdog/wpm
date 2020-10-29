@@ -5,35 +5,35 @@ const { inject, uninject } = require('powercord/injector');
 
 /* First public plugin soooo... bad code lol */
 
-function resetTime() {
-  this.start = new Date().getTime();
+let start = 0; // facepalm.. please don't look at previous commit.
+
+function resetTime () {
+  start = new Date().getTime();
 }
 
-function delta() {
-  return (new Date().getTime() - this.start) / 1000 / 60;
+function delta () {
+  return (new Date().getTime() - start) / 1000 / 60;
 }
 
 module.exports = class WPM extends Plugin {
   async startPlugin () {
     this.loadStylesheet('style.css');
 
-    this.start = 0;
-    let setLength;
-    // Credits to https://github.com/Inve1951/BetterDiscordStuff/blob/master/plugins/CharacterCounter.plugin.js
-    const WPM = function ({ value }) {
-      let init = 0;
-      if (value) {
-        init = value.trim().length;
-      }
-      const [ length, sl ] = React.useState(init);
-      setLength = sl;
+    resetTime();
+    let setValue;
 
-      if (length === 0) {
+    // Credits to https://github.com/Inve1951/BetterDiscordStuff/blob/master/plugins/CharacterCounter.plugin.js
+    const WPM = function ({ init_value }) {
+      const [ value, sv ] = React.useState(init_value || '');
+      setValue = sv;
+
+      if (value.trim().length < 2) { // reset time at zero or one character
         resetTime();
       }
-      const _wpm = length / 5 / delta();
+
+      const _wpm = value.split(' ').length / delta(); // length / 5 / delta(); -- actual words was unexpectedly widely requested
       return React.createElement(
-        'span', { id: 'pc-wpm' }, `${isNaN(_wpm) ? 0 : Math.floor(_wpm)} WPM`
+        'span', { id: 'wpm-indicator-text' }, `${isFinite(_wpm) ? Math.floor(_wpm) : 0} WPM`
       );
     };
 
@@ -42,8 +42,8 @@ module.exports = class WPM extends Plugin {
     inject('wpm-hook', SlateChannelTextArea.prototype, 'render', (args, res) => {
       setTimeout(() => {
         const ta = document.querySelector('[data-slate-editor="true"]')?.innerText;
-        if (ta && setLength) {
-          setLength(ta.trim().length);
+        if (ta && setValue) {
+          setValue(ta);
         }
       });
       return res;
@@ -52,7 +52,7 @@ module.exports = class WPM extends Plugin {
     const TypingUsers = await getModule(m => m.default && m.default.displayName === 'FluxContainer(TypingUsers)');
 
     inject('wpm-indicator', TypingUsers.default.prototype, 'render', (args, res) => React.createElement(
-      React.Fragment, null, res, React.createElement(WPM, { value: document.querySelector('[data-slate-editor="true"]')?.innerText })
+      React.Fragment, null, res, React.createElement(WPM, { init_value: document.querySelector('[data-slate-editor="true"]')?.innerText })
     ));
   }
 

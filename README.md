@@ -1,12 +1,12 @@
 <h1 align="center">Welcome to wpm 👋</h1>
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-1.1.0-blue.svg?cacheSeconds=2592000" />
   <a href="https://github.com/romdotdog/wpm/blob/main/LICENSE" target="_blank">
     <img alt="License: MIT License" src="https://img.shields.io/badge/License-MIT License-yellow.svg" />
   </a>
 </p>
 
-> View words per minute if each word was five characters
+> View words per minute on a nice little indicator.
 
 ### 🏠 [Homepage](https://github.com/romdotdog/wpm)
 
