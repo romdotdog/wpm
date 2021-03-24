@@ -4,7 +4,6 @@
   pointer-events: none;
   display: block;
   position: absolute;
-  right: 16px;
   bottom: .2em;
   z-index: 1;
 }
