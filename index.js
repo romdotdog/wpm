@@ -59,9 +59,9 @@ module.exports = class WPMPlugin extends Plugin {
         );
     });
 
-    const SlateChannelTextArea = await getModuleByDisplayName('SlateChannelTextArea');
+    const ChannelEditorContainer = await getModuleByDisplayName('ChannelEditorContainer');
 
-    inject('wpm-hook', SlateChannelTextArea.prototype, 'render', (args, res) => {
+    inject('wpm-hook', ChannelEditorContainer.prototype, 'render', (args, res) => {
       setTimeout(() => {
         const ta = document.querySelector('[data-slate-editor="true"]')?.innerText;
         if (ta && setValue) {
