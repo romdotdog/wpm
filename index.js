@@ -1,85 +1,80 @@
 const { Plugin } = require('powercord/entities');
-// const { findInReactTree } = require('powercord/util');
 const {
-	getModule,
-	getModuleByDisplayName,
-	React,
-	Flux
+    getModule,
+    getModuleByDisplayName,
+    React,
+    Flux
 } = require("powercord/webpack");
 const { inject, uninject } = require('powercord/injector');
 
-/* First public plugin soooo... bad code lol */
-
-let start = 0;
-
-function resetTime () {
-  start = new Date().getTime();
-}
-
-function delta () {
-  return (new Date().getTime() - start) / 1000 / 60;
-}
-
 module.exports = class WPMPlugin extends Plugin {
-  async startPlugin () {
-    this.loadStylesheet('style.css');
+    start = 0;
 
-    resetTime();
-    let setValue;
+    resetTime() {
+        this.start = new Date().getTime();
+    }
 
-    // Credits to https://github.com/Inve1951/BetterDiscordStuff/blob/master/plugins/CharacterCounter.plugin.js
+    timeSinceReset() {
+        return (new Date().getTime() - this.start) / 1000 / 60;
+    }
 
-    const channelStore = await getModule(["hasChannel", "getChannel"]);
-    const channelIdStore = await getModule(["getChannelId", "getLastSelectedChannelId"]);
+    async startPlugin() {
+        this.loadStylesheet('style.css');
 
-    const WPM = Flux.connectStores([channelIdStore], (props) => {
-        const channel = channelStore.getChannel(channelIdStore.getChannelId());
-        props.rateLimitPerUser = channel.rateLimitPerUser;
-        return props;
-    })(function ({ initValue, rateLimitPerUser }) {
-        const [value, sv] = React.useState(initValue || "");
-        setValue = sv;
+        this.resetTime();
+        // from https://github.com/Inve1951/BetterDiscordStuff/blob/master/plugins/CharacterCounter.plugin.js
 
-        if (value.trim().length < 2) {
-            // reset time at zero or one character
-            resetTime();
-        }
+        const channelStore = await getModule(["hasChannel", "getChannel"]);
+        const channelIdStore = await getModule(["getChannelId", "getLastSelectedChannelId"]);
 
-        const right = rateLimitPerUser ? 360 : 16;
-        const _wpm = value.split(" ").length / delta(); // length / 5 / delta(); -- actual words was unexpectedly widely requested
-        return React.createElement(
-            "span",
-            {
-                id: "wpm-indicator-text",
-                style: {
-                    right
+        const WPM = Flux.connectStores([channelIdStore], (props) => {
+            const channel = channelStore.getChannel(channelIdStore.getChannelId());
+            props.rateLimitPerUser = channel.rateLimitPerUser;
+            return props;
+        })(({ initValue, rateLimitPerUser }) => {
+            const [value, setValue] = React.useState(initValue || "");
+            this.setValue = setValue;
+
+            if (value.trim().length < 2) {
+                // reset time at zero or one character
+                this.resetTime();
+            }
+
+            const right = rateLimitPerUser ? 360 : 16;
+            const wpm = value.split(" ").length / this.timeSinceReset();
+            return React.createElement(
+                "span",
+                {
+                    id: "wpm-indicator-text",
+                    style: {
+                        right
+                    }
+                },
+                `${isFinite(wpm) ? Math.floor(wpm) : 0} WPM`
+            );
+        });
+
+        const ChannelEditorContainer = await getModuleByDisplayName('ChannelEditorContainer');
+
+        inject('wpm-hook', ChannelEditorContainer.prototype, 'render', (args, res) => {
+            setTimeout(() => {
+                const text = document.querySelector('[data-slate-editor="true"]')?.innerText;
+                if (text && this.setValue) {
+                    this.setValue(text);
                 }
-            },
-            `${isFinite(_wpm) ? Math.floor(_wpm) : 0} WPM`
-        );
-    });
+            });
+            return res;
+        });
 
-    const ChannelEditorContainer = await getModuleByDisplayName('ChannelEditorContainer');
+        const TypingUsers = await getModule(m => m.default && m.default.displayName === 'FluxContainer(TypingUsers)');
 
-    inject('wpm-hook', ChannelEditorContainer.prototype, 'render', (args, res) => {
-      setTimeout(() => {
-        const ta = document.querySelector('[data-slate-editor="true"]')?.innerText;
-        if (ta && setValue) {
-          setValue(ta);
-        }
-      });
-      return res;
-    });
+        inject('wpm-indicator', TypingUsers.default.prototype, 'render', (args, res) => React.createElement(
+            React.Fragment, null, res, React.createElement(WPM, { initValue: document.querySelector('[data-slate-editor="true"]')?.innerText })
+        ));
+    }
 
-    const TypingUsers = await getModule(m => m.default && m.default.displayName === 'FluxContainer(TypingUsers)');
-
-    inject('wpm-indicator', TypingUsers.default.prototype, 'render', (args, res) => React.createElement(
-      React.Fragment, null, res, React.createElement(WPM, { initValue: document.querySelector('[data-slate-editor="true"]')?.innerText })
-    ));
-  }
-
-  pluginWillUnload () {
-    uninject('wpm-indicator');
-    uninject('wpm-hook');
-  }
+    pluginWillUnload() {
+        uninject('wpm-indicator');
+        uninject('wpm-hook');
+    }
 };
